@@ -26,7 +26,7 @@ class LibraryLotkaVoltera(Library):
         C = torch.ones_like(prediction[:,0]).view(samples, -1)
         u = prediction[:,0].view(samples, -1)
         v = prediction[:,1].view(samples, -1)
-        theta = torch.cat((C, u, v, torch.sin(u)), dim=1)
+        theta = torch.cat((C, u, v, torch.mul(u, v)), dim=1)
 
         # Construct a list of time_derivatives 
         for output in torch.arange(prediction.shape[1]):
