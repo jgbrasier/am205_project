@@ -41,8 +41,7 @@ def lotkavolterra(t, U):
     return np.array([ a*U[0] -   b*U[0]*U[1] ,
                   -c*U[1] + d*b*U[0]*U[1] ])
 
-delta_t = 0.1
-t = np.arange(0, 100, delta_t)
+t = np.linspace(0, 20, 500)
 t_range = (t[0], t[-1])
 U0= np.array([1, 2]) # initial point x0,y0
 U = solve_ivp(lotkavolterra, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSODA', atol = 1e-12).y.T
@@ -57,7 +56,7 @@ U = solve_ivp(lotkavolterra, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSOD
 t_norm = t
 U_norm = U/np.max(np.abs(U))
 # noisify data
-noise_lvls = [0.1, 1.0, 2.5]
+noise_lvls = [0.1, 0.5, 0.75, 1.0, 2.0]
 all_U_noise = []
 
 errs = []
@@ -106,28 +105,28 @@ for noise_lvl in noise_lvls:
     y_pred = model(X)[0].detach().numpy()
 
 
-    plt.figure()
-    plt.subplot(221)
-    plt.title("Noise level=".format(noise_lvl))
-    plt.plot(t_norm, U_noise_norm[:, 0], 'r', label='Input')
-    plt.plot(X.detach().numpy().squeeze(), y_pred[:, 0], 'b--', label='Reconstructed', zorder=1)
+    plt.figure(figsize=(7, 7))
+    plt.subplot(211)
+    plt.title("Noise level={}".format(noise_lvl))
+    plt.plot(t_norm, U_noise_norm[:, 0], 'r', label='Input', zorder=0)
+    plt.plot(X.detach().numpy().squeeze(), y_pred[:, 0], 'b.', label='Reconstructed', zorder=1)
     plt.legend(loc='best')
     plt.xlabel('time')
     plt.ylabel('x')
-    plt.subplot(222)
-    plt.plot(t_norm, U_noise_norm[:, 1]  , 'r', label='Input')
-    plt.plot(X.detach().numpy().squeeze(), y_pred[:, 1], 'b--', label='Reconstructed', zorder=1)
+    plt.subplot(212)
+    plt.plot(t_norm, U_noise_norm[:, 1]  , 'r', label='Input', zorder=0)
+    plt.plot(X.detach().numpy().squeeze(), y_pred[:, 1], 'b.', label='Reconstructed', zorder=1)
     plt.legend(loc='best')
     plt.xlabel('time')
     plt.ylabel('y')
     plt.savefig("./figs/lv/lotkavolterra_pred_{}.png".format(noise_lvl))
 
     # errors:
-    err = np.average(np.sqrt(np.sum((y_pred - y)**2)/len(y)))
+    err = np.average(np.sqrt(np.sum((y_pred - y.numpy())**2)/len(y)))
     errs.append(err)
 
 
-fig, ax = plt.subplots(ncol=2, nrows=2)
+fig, ax = plt.subplots(figsize=(12, 6), ncols=3, nrows=2)
 ax = ax.flatten()
 ax[0].plot(U_norm[:, 0], U_norm[:, 1], color='blue')
 ax[0].set_xlabel('$x$')
@@ -135,9 +134,9 @@ ax[0].set_ylabel('$y$')
 ax[0].set_title("Input data, no noise")
 
 for i in range(len(noise_lvls)):
-
-    ax[i+1].title("DeepMod reconstructed system, noise level={}".format(noise_lvls[i]))
-    ax[i+1].plot(all_U_noise[i][:, 0], all_U_noise[i][:, 1]  , color='blue')
+    
+    ax[i+1].set_title("DeepMod reconstructed system, noise level={}".format(noise_lvls[i]))
+    ax[i+1].plot(all_U_noise[i][:, 0], all_U_noise[i][:, 1]  , 'b.')
     ax[i+1].set_xlabel('$x$')
     ax[i+1].set_ylabel('$y$')
 
