@@ -34,20 +34,17 @@ a = 1.
 b = 0.5
 c = 0.5
 d = 2.
-def lotkavolterra(U, t=0):
+def lotkavolterra(t, U):
     """ Return the growth rate of predator and prey populations. 
     U: [x, y] population vector
     """
     return np.array([ a*U[0] -   b*U[0]*U[1] ,
                   -c*U[1] + d*b*U[0]*U[1] ])
-t = np.linspace(0, 15,  500)              # time
-U0 = np.array([10, 5])                     # initials conditions: 10 prey and 5 predator
-U = odeint(lotkavolterra, U0, t)
 
-delta_t = 0.001
+delta_t = 0.1
 t = np.arange(0, 100, delta_t)
 t_range = (t[0], t[-1])
-U0= [1, 2] # initial point x0,y0
+U0= np.array([1, 2]) # initial point x0,y0
 U = solve_ivp(lotkavolterra, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSODA', atol = 1e-12).y.T
 
 # def dU_dt(U, t):
@@ -126,7 +123,7 @@ for noise_lvl in noise_lvls:
     plt.savefig("./figs/lv/lotkavolterra_pred_{}.png".format(noise_lvl))
 
     # errors:
-    err = np.sqrt(np.sum((y_pred - y)**2)/len(y))
+    err = np.average(np.sqrt(np.sum((y_pred - y)**2)/len(y)))
     errs.append(err)
 
 
@@ -145,8 +142,11 @@ for i in range(len(noise_lvls)):
     ax[i+1].set_ylabel('$y$')
 
 plt.tight_layout()
-plt.savefig("./figs/lv/lotkavolterra_sim_{}.png".format(noise_lvl))
+plt.savefig("./figs/lv/lotkavolterra_sim.png")
 
 plt.figure()
 plt.title("RMSE vs noise")
-plt.plot(noise_lvls, errs)
+plt.plot(noise_lvls, errs, '-ok')
+plt.xlabel("noise level")
+plt.ylabel("average RMSE")
+plt.savefig("./figs/lv/lotkavolterra_err.png")
