@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import os
+from scipy.integrate import solve_ivp
 
 # DeepMoD functions
 from deepymod import DeepMoD
@@ -43,6 +44,12 @@ t = np.linspace(0, 15,  500)              # time
 U0 = np.array([10, 5])                     # initials conditions: 10 prey and 5 predator
 U = odeint(lotkavolterra, U0, t)
 
+delta_t = 0.001
+t = np.arange(0, 100, delta_t)
+t_range = (t[0], t[-1])
+U0= [1, 2] # initial point x0,y0
+U = solve_ivp(lotkavolterra, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSODA', atol = 1e-12).y.T
+
 # def dU_dt(U, t):
 #     return [U[1], -1*U[1] - 5*np.sin(U[0])]
 # U0 = [2.5, 0.4]
@@ -51,38 +58,18 @@ U = odeint(lotkavolterra, U0, t)
 # U = odeint(dU_dt, U0, t)
 
 t_norm = t
-U_norm = U
+U_norm = U/np.max(np.abs(U))
 # noisify data
-noise_lvls = [0.1, 1.0, 2.5, 5.0]
+noise_lvls = [0.1, 1.0, 2.5]
+all_U_noise = []
+
+errs = []
+
 for noise_lvl in noise_lvls:
     noise = 0.1*np.random.randn(U.shape[0], U.shape[1])
     U_noise = U + noise
-    U_noise_norm = U_noise
-
-    normalise = True
-    if normalise:
-        # t_norm = t/np.max(np.abs(t))
-        U_norm = U/np.max(np.abs(U))
-        U_noise_norm = U_noise/np.max(np.abs(U_noise))
-
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(U_norm[:, 0], U_norm[:, 1], color='blue')
-    plt.grid()
-    plt.legend(loc='best')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title("Input data, no noise")
-    plt.subplot(212)
-    plt.title("DeepMod reconstructed system, noise level={}".format(noise_lvl))
-    plt.plot(U_noise_norm[:, 0], U_noise_norm[:, 1]  , color='blue')
-    plt.grid()
-    plt.legend(loc='best')
-    plt.xlabel('y')
-    plt.ylabel('population')
-    plt.tight_layout()
-    plt.savefig("./figs/lv/lotkavolterra_sim_{}.png".format(noise_lvl))
-
+    U_noise_norm = U_noise/np.max(np.abs(U_noise))
+    all_U_noise.append(U_noise_norm)
 
     # tensors
     number_of_samples = 250
@@ -137,3 +124,29 @@ for noise_lvl in noise_lvls:
     plt.xlabel('time')
     plt.ylabel('y')
     plt.savefig("./figs/lv/lotkavolterra_pred_{}.png".format(noise_lvl))
+
+    # errors:
+    err = np.sqrt(np.sum((y_pred - y)**2)/len(y))
+    errs.append(err)
+
+
+fig, ax = plt.subplots(ncol=2, nrows=2)
+ax = ax.flatten()
+ax[0].plot(U_norm[:, 0], U_norm[:, 1], color='blue')
+ax[0].set_xlabel('$x$')
+ax[0].set_ylabel('$y$')
+ax[0].set_title("Input data, no noise")
+
+for i in range(len(noise_lvls)):
+
+    ax[i+1].title("DeepMod reconstructed system, noise level={}".format(noise_lvls[i]))
+    ax[i+1].plot(all_U_noise[i][:, 0], all_U_noise[i][:, 1]  , color='blue')
+    ax[i+1].set_xlabel('$x$')
+    ax[i+1].set_ylabel('$y$')
+
+plt.tight_layout()
+plt.savefig("./figs/lv/lotkavolterra_sim_{}.png".format(noise_lvl))
+
+plt.figure()
+plt.title("RMSE vs noise")
+plt.plot(noise_lvls, errs)
