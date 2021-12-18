@@ -34,17 +34,16 @@ a = 1.
 b = 0.5
 c = 0.5
 d = 2.
-def lotkavolterra(t, U):
-    """ Return the growth rate of predator and prey populations. 
-    U: [x, y] population vector
-    """
-    return np.array([ a*U[0] -   b*U[0]*U[1] ,
-                  -c*U[1] + d*b*U[0]*U[1] ])
+def linear_damped_SHO(t, U):
+	"""x' = -0.1x+2y
+	y' = -2x-0.1y
+	"""
+	return [-0.1 * U[0] + 2 * U[1], -2 * U[0] - 0.1 * U[1]]
 
-t = np.linspace(0, 20, 500)
+t = np.linspace(0, 15, 1000)
 t_range = (t[0], t[-1])
-U0= np.array([1, 2]) # initial point x0,y0
-U = solve_ivp(lotkavolterra, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSODA', atol = 1e-12).y.T
+U0= np.array([1, 0]) # initial point x0,y0
+U = solve_ivp(linear_damped_SHO, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSODA', atol = 1e-12).y.T
 
 # def dU_dt(U, t):
 #     return [U[1], -1*U[1] - 5*np.sin(U[0])]
@@ -56,19 +55,19 @@ U = solve_ivp(lotkavolterra, t_range, U0, t_eval=t, rtol = 1e-12, method = 'LSOD
 t_norm = t
 U_norm = U/np.max(np.abs(U))
 # noisify data
-noise_lvls = [0.1, 0.5, 0.75, 1.0, 2.0]
+noise_lvls = [0.001, 0.01, 0.1, 0.5, 1.0]
 all_U_noise = []
 
 errs = []
 
 for noise_lvl in noise_lvls:
-    noise = 0.1*np.random.randn(U.shape[0], U.shape[1])
+    noise = noise_lvl*np.random.randn(U.shape[0], U.shape[1])
     U_noise = U + noise
     U_noise_norm = U_noise/np.max(np.abs(U_noise))
     all_U_noise.append(U_noise_norm)
 
     # tensors
-    number_of_samples = 250
+    number_of_samples = 500
 
     idx = np.random.permutation(U_noise.shape[0])
     X = torch.tensor(t_norm.reshape(-1, 1)[idx, :][:number_of_samples], dtype=torch.float32, requires_grad=True)
@@ -84,7 +83,7 @@ for noise_lvl in noise_lvls:
     library = LibraryLotkaVoltera()
 
     # Configuration of the sparsity estimator and sparsity scheduler used.
-    estimator = Threshold(0.5) 
+    estimator = Threshold(0.03) 
     sparsity_scheduler = TrainTestPeriodic(periodicity=50, patience=500) 
     constraint = LeastSquares() 
 
@@ -94,9 +93,9 @@ for noise_lvl in noise_lvls:
     optimizer = torch.optim.Adam(model.parameters(), betas=(0.99, 0.99), amsgrad=True, lr=1e-4)
 
     # logdir
-    logpath = r'./logs/lotkavoltera_' + str(noise_lvl)
+    logpath = r'DeepMod/logs/simpleode_' + str(noise_lvl)
 
-    train(model, X, y, optimizer, sparsity_scheduler, log_dir=logpath, split=0.8, max_iterations=100000, patience=200, delta=1e-5) 
+    train(model, X, y, optimizer, sparsity_scheduler, log_dir=logpath, split=0.8, max_iterations=100000, patience=100, delta=1e-6) 
 
     print(model.sparsity_masks)
     print(model.estimator_coeffs())
@@ -119,7 +118,8 @@ for noise_lvl in noise_lvls:
     plt.legend(loc='best')
     plt.xlabel('time')
     plt.ylabel('y')
-    plt.savefig("./figs/lv/lotkavolterra_pred_{}.png".format(noise_lvl))
+    plt.tight_layout()
+    plt.savefig("DeepMod/figs/simpleode/ode_pred_{}.png".format(noise_lvl))
 
     # errors:
     err = np.average(np.sqrt(np.sum((y_pred - y.numpy())**2)/len(y)))
@@ -135,17 +135,17 @@ ax[0].set_title("Input data, no noise")
 
 for i in range(len(noise_lvls)):
     
-    ax[i+1].set_title("DeepMod reconstructed system, noise level={}".format(noise_lvls[i]))
+    ax[i+1].set_title("Input data, noise level={}".format(noise_lvls[i]))
     ax[i+1].plot(all_U_noise[i][:, 0], all_U_noise[i][:, 1]  , 'b.')
     ax[i+1].set_xlabel('$x$')
     ax[i+1].set_ylabel('$y$')
 
 plt.tight_layout()
-plt.savefig("./figs/lv/lotkavolterra_sim.png")
+plt.savefig("DeepMod/figs/simpleode/ode_sim.png")
 
 plt.figure()
 plt.title("RMSE vs noise")
 plt.plot(noise_lvls, errs, '-ok')
 plt.xlabel("noise level")
 plt.ylabel("average RMSE")
-plt.savefig("./figs/lv/lotkavolterra_err.png")
+plt.savefig("DeepMod/figs/simpleode/ode_err.png")
