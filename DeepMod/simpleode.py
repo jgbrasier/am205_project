@@ -29,11 +29,6 @@ from scipy.integrate import odeint
 np.random.seed(40)
 torch.manual_seed(0)
 
-# lotka voltera model
-a = 1.
-b = 0.5
-c = 0.5
-d = 2.
 def linear_damped_SHO(t, U):
 	"""x' = -0.1x+2y
 	y' = -2x-0.1y

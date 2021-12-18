@@ -18,7 +18,7 @@ def linear_damped_SHO(t, x):
 
 # Generate training data
 delta_t = 0.01
-t_train = np.arange(0, 30, delta_t)
+t_train = np.arange(0, 20, delta_t)
 t_train_range = (t_train[0], t_train[-1])
 x0_train = [1, 0] # initial condition
 x_train = solve_ivp(linear_damped_SHO, t_train_range, x0_train, t_eval=t_train, rtol = 1e-12, method = 'LSODA', atol = 1e-12).y.T
@@ -108,7 +108,7 @@ ax = fig.add_subplot(133)
 ax.plot(x_sim[model_idx][:, 0], x_sim[model_idx][:, 1])
 plt.title(f"SINDy identified system, Noise level={noise_levels[model_idx]}")
 ax.set(xlabel="$x$", ylabel="$y$")
-plt.savefig('./graphs/vibration.png')
+plt.savefig('SINDy/graphs/vibration.png')
 
 fig = plt.figure(figsize=(12, 5))
 model_idx = 0
@@ -140,7 +140,7 @@ ax.plot(t_sim, x_sim[model_idx][:, 1], "b--", label = 'Simulated data')
 plt.xlabel("time")
 plt.ylabel("y")
 plt.legend()
-plt.savefig('./graphs/vibration2.png')
+plt.savefig('SINDy/graphs/vibration2.png')
 
 # errors (RMSE vs noise):
 rmse_average_noise = []
@@ -152,7 +152,7 @@ ax.set_title('RMSE vs noise')
 ax.set_ylabel('RMSE in both x and y')
 ax.set_xlabel('Noise levels')
 ax.set_yscale('log')
-plt.savefig('./graphs/vibration3.png')
+plt.savefig('SINDy/graphs/vibration3.png')
 # fig.tight_layout()
 
 # errors (RMSE vs threshold):
@@ -165,6 +165,6 @@ ax.set_title('RMSE vs threshold level')
 ax.set_ylabel('RMSE in both x and y')
 ax.set_xlabel('Threshold levels')
 ax.set_yscale('log')
-plt.savefig('./graphs/vibration4.png')
+plt.savefig('SINDy/graphs/vibration4.png')
 
 # plt.show()
