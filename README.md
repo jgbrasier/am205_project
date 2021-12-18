@@ -8,6 +8,6 @@ $ pip install deepymod
 ```
 
 ### Members
-YongChao Chen
-Nicolas Dhers
-Jean-Guillaume Brasier
+- YongChao Chen
+- Nicolas Dhers
+- Jean-Guillaume Brasier
